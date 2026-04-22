@@ -16,7 +16,7 @@
   ******************************************************************************
   */
 #include "main.h"
-
+//Hello :33
 void SystemClock_Config(void);
 void Init_LEDs(void);
 static void MX_GPIO_Init(void);
@@ -42,22 +42,63 @@ uint8_t pattern[BEAT_SIZE];
 //notice that the "volatile" keyword is used, since we will very often be editing step's value.
 volatile uint8_t step = 0;
 //Mode: 0 is Beat Build Mode, 1 is Play mode. Starts on Beat Build Mode.
-uint8_t mode = 1;
+volatile uint8_t mode = 0;
+
 int main(void)
 {
-    HAL_Init();
-		HAL_Delay(100); 
-    SystemClock_Config();
+  HAL_Init();
+	HAL_Delay(100); 
+  SystemClock_Config();
+	int temp;
+	//Turn off all LEDs in Init
+	MX_GPIO_Init();
+	//Initializing timer 2 to interrupt at 120 bpm.
+	Init_Timer2();
 	
-		//Turn off all LEDs in Init
-		MX_GPIO_Init();
-		//Initializing timer 2 to interrupt at 120 bpm.
-		Init_Timer2();
-
-    while (1)
+		uint8_t last = 255;
+		HAL_Delay(25);
+		int last_mode = 1;
+while (1)
+{
+    temp = Read_Keypad();
+		GPIOA->ODR &= ~((1<<0) | (1<<1));
+    // detect NEW press only
+    if(temp == 15 && last != 15)
     {
+        mode++;
+        if(mode > 1)
+            mode = 0;
+    }
+
+    last = temp; 
+
+    // LED behavior (non-blocking style)
+    if(mode != last_mode)
 			
-			//Turn all LEDs off
+    {
+		if(mode == 0)
+    {
+         if(mode != last_mode)
+			
+        Write_Instr_LCD(0x01);
+				Write_Instr_LCD(0x80);
+				Write_String_LCD("Beat Build Mode!");
+				Write_Instr_LCD(0xC0);
+				Write_String_LCD("TIM is gay!");
+				Write_Instr_LCD(0xC1);
+    }
+    else if(mode == 1)
+    {
+          
+			
+				Write_Instr_LCD(0x01);
+				Write_Instr_LCD(0x80);
+				Write_String_LCD("Play Mode!");
+				Write_Instr_LCD(0xC0);
+				Write_String_LCD("DAVID is gay!");
+				Write_Instr_LCD(0xC1);
+				
+									//Turn all LEDs off
 			GPIOA->ODR &= ~(1<<1);
 			GPIOA->ODR &= ~(1<<0);
 			GPIOC->ODR &= ~(1<<8);
@@ -80,7 +121,10 @@ int main(void)
 				//Turn on LED 0
 				GPIOA->ODR |= (1<<1);
 			}
+        
     }
+      } last_mode = mode;
+}
 }
 
 
